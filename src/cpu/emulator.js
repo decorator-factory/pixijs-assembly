@@ -30,9 +30,12 @@ export const CPU = ({ioGet, ioSet}) => {
     //@         have to be an Array -- it simply has to support forEach:
     //@         forEach: (fn: (value: number, index:number) => void) => void
     //@
-    //@     run: () => void
-    //@         Set up the initial state and run the CPU
-
+    //@     run: ({cyclesLimit: number}) => {halted: boolean}
+    //@         Set up the initial state and run the CPU. If the CPU executes
+    //@         more than `cyclesLimit` instructions, it gets paused and stops.
+    //@         `halted` is set to `true` if the `run` function finished
+    //@         naturally (i.e. with a `hlt` instruction) as opposed to
+    //@         exceeding the cycle limit.
 
 
     const ram = new Uint8Array(65536);
@@ -290,35 +293,40 @@ export const CPU = ({ioGet, ioSet}) => {
         },
     };
 
-    const run = () => {
+
+    let fresh = true;
+
+    const run = ({cyclesLimit}) => {
         const readArgument = () => {
             const arg = memoryGet(IP);
             IP++;
             return arg;
         };
 
-        // start address is stored at 0x0000-0x0001
-        IP = 0;
-        const startLow = readArgument();
-        const startHigh = readArgument();
-        IP = startLow + startHigh*256;
+        if (fresh){ // We're starting from scratch, not resuming
+            IP = ram[0x0000] + ram[0x0001]*256;
+            halted = false;
+            fresh = false;
+        }
 
-        halted = false;
         let cycles = 0;
         while (!halted) {
-            cycles++;
-
             const opcode = readArgument();
             const instruction = instructions[opcode];
-
-            if (cycles > 32000)
-                throw new Error(`Hung up!`);
 
             if (!instruction)
                 throw new Error(`Invalid opcode at IP=0x${IP.toString(16).padStart(4, "0")}: ${opcode}`);
 
             instruction(readArgument);
+
+            cycles++;
+            if (cycles > cyclesLimit){
+                cycles = 0;
+                return { halted: false };
+            }
         }
+        fresh = true;
+        return { halted: true };
     };
 
     return {
