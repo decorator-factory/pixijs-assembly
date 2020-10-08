@@ -329,7 +329,7 @@ export const CPU = ({ioGet, ioSet}) => {
             const instruction = instructions[opcode];
 
             if (!instruction)
-                throw new Error(`Invalid opcode at IP=0x${IP.toString(16).padStart(4, "0")}: ${opcode}`);
+                throw new Error(`Invalid opcode at IP=0x${IP.toString(16).padStart(4, "0")}: 0x${opcode.toString(16).padStart(4, "0")}`);
 
             instruction(readArgument);
 
