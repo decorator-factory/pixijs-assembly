@@ -38,8 +38,8 @@ export const Emulator = ({sourceCode, screen, wasd}) => {
     };
     const cpu = CPU({ioGet, ioSet});
 
-    const code = parse({ source: sourceCode, mountAddress: 0x10 });
-    cpu.loadProgram(0x10, code);
+    const code = parse({ source: sourceCode, mountAddress: 0x100 });
+    cpu.loadProgram(0x100, code);
 
     // update handler
     const onStep = ({state}) => {
