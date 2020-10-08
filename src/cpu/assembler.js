@@ -77,7 +77,7 @@ const parseArg = lineno => arg => {
 }
 
 
-const parse = ({source, mountAddress}) => {
+export const parse = ({source, mountAddress}) => {
     const labels = {};
     let instructionPointer = mountAddress;
     let lineno = 1;
@@ -120,7 +120,3 @@ const parse = ({source, mountAddress}) => {
 
     return byteFactories.map(f => f(labels));
 }
-
-
-
-export default { parse };
