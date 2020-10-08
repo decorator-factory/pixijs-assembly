@@ -11,6 +11,8 @@ export const Emulator = ({sourceCode, screen, wasd}) => {
     const ADDR_UP =    screenWidth*screenHeight + 2;
     const ADDR_DOWN =  screenWidth*screenHeight + 3;
 
+    const ADDR_DEBUG = 0x0fff;
+
     const ioGet = addr => {
         if (0 <= addr && addr < screenWidth * screenHeight)
             throw new Error(`Attempt to read from video memory: ${addr}`);
@@ -27,7 +29,9 @@ export const Emulator = ({sourceCode, screen, wasd}) => {
         throw new Error(`Attempt to read from unmapped IO region: ${addr}`);
     };
     const ioSet = (addr, value) => {
-        if (0 <= addr && addr < screenWidth * screenHeight)
+        if (addr === ADDR_DEBUG)
+            console.log("=>", "0x"+value.toString(16).padStart(4, "0"));
+        else if (0 <= addr && addr < screenWidth * screenHeight)
             screen.changePixel(addr % screenWidth, Math.floor(addr / screenWidth), value);
         else
             throw new Error(`Attempt to write to unmapped IO region: ${addr}`);
