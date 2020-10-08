@@ -23,9 +23,19 @@ const parseArg = lineno => arg => {
     //@ This solves the issue of referring to labels which are
     //@ defined later on in the code.
     if (arg.startsWith(":")) // low byte
-        return labels => labels[arg.slice(1)] % 256;
+        return labels => {
+            const n = labels[arg.slice(1)];
+            if (n === undefined)
+                throw new Error(`Undefined label ${arg} at line ${lineno}`);
+            return n % 256;
+        };
     else if (arg.endsWith(":")) // high byte
-        return labels => labels[arg.slice(0, -1)] >> 8;
+        return labels => {
+            const n = labels[arg.slice(0, -1)];
+            if (n === undefined)
+                throw new Error(`Undefined label ${arg} at line ${lineno}`);
+            return n >> 8;
+        };
     else if (!isNaN(parseInt(arg)))
         return () => parseInt(arg);
     else if (arg in registers)
