@@ -16,20 +16,79 @@ const PROGRAM = `
     sec 0x00 0x00
     num m main:
     sec 0x00 0x01
-
     hlt
+
+
+.draw_point
+    # stack: 2 (x y)
+    # modifies: c d m
+
+    # stack[2] = y
+    ofg c 2
+    num m 16
+    mul c m
+
+    # stack[3] = x
+    ofg m 3
+    add c m
+
+    num d 0xe0
+    num m 1
+    ser c d
+    ret
+
+
+.pieces
+    # x y
+    dat 1    3
+    dat 2    7
+    dat 14   5
+    dat 8    12
+    dat 0xff
+
+
+.draw_treasure
+    # stack: 0 ()
+    # modifies: a b c d m
+
+    num a :pieces
+    num b pieces:
+
+    ._draw_treasure_loop
+        ger a b
+        num d 0xff
+        sub m d
+        jiz :_draw_treasure_loop_end _draw_treasure_loop_end:
+        add m d
+
+        psh m
+
+        inl a b
+        ger a b
+        psh m
+
+        clc :draw_point draw_point:
+        eat 2
+
+        inl a b
+        jmp :_draw_treasure_loop _draw_treasure_loop:
+
+    ._draw_treasure_loop_end
+    ret
 
 
 .x
     dat 0
-
 .y
-    dat 5
+    dat 0
 
 
 .clear
+    # stack: 0 ()
+    # modifies: a b c d m
+
     num b 0
-    ._clear_bx
+    ._clear_by
         num a 0
         ._clear_ax
             # c <- b*16 + a
@@ -38,8 +97,8 @@ const PROGRAM = `
             mul c d
             add c a
 
-            num d 0xe0
             num m 0
+            num d 0xe0
             ser c d
 
             inc a
@@ -53,17 +112,16 @@ const PROGRAM = `
         num d 16
         sub b d
         pop b
-        jnz :_clear_bx _clear_bx:
+        jnz :_clear_by _clear_by:
     ret
 
 
 .main
     clc :clear clear:
-
-    num a 0
+    clc :draw_treasure draw_treasure:
 
     gec :x x:
-    add a m
+    mov a m
 
     gec :y y:
     num b 16
@@ -96,8 +154,7 @@ const PROGRAM = `
         sub m d
         pop m
         jiz :skip2 skip2:
-
-        sec :x x:
+            sec :x x:
     .skip2
 
     # up button? -> M
@@ -122,12 +179,13 @@ const PROGRAM = `
         sub m d
         pop m
         jiz :skip4 skip4:
-
-        sec :y y:
+            sec :y y:
     .skip4
 
-
     hlt
+
+
+
 `;
 
 
