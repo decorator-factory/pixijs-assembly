@@ -291,6 +291,21 @@ export const CPU = ({ioGet, ioSet}) => {
             const src = arg();
             regSet(dest, regGet(dest) >> regGet(src));
         },
+
+        0x1c: arg => { // INL
+            const low = arg();
+            const high = arg();
+            const newValue = (regGet(low) + regGet(high)*256 + 1) % 65536;
+            regSet(low, newValue % 256);
+            regSet(high, newValue >> 8);
+        },
+        0x1d: arg => { // DEL
+            const low = arg();
+            const high = arg();
+            const newValue = mod(regGet(low) + regGet(high)*256 - 1, 65536);
+            regSet(low, newValue % 256);
+            regSet(high, newValue >> 8);
+        },
     };
 
 

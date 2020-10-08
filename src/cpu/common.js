@@ -40,6 +40,8 @@ export const instructions = {
     mul: {op: 0x19, args: ["reg", "reg"]},
     shl: {op: 0x1a, args: ["reg", "reg"]},
     shr: {op: 0x1b, args: ["reg", "reg"]},
+    inl: {op: 0x1c, args: ["reg", "reg"]},
+    del: {op: 0x1d, args: ["reg", "reg"]},
     dat: {op: null, args: null},
 };
 
