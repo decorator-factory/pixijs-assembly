@@ -112,8 +112,7 @@ export const CPU = ({ioGet, ioSet}) => {
 
     const stackPop = () => {
         SP--;
-        const p = ram[SP];
-        return p;
+        return ram[SP];
     };
 
     const stackPush = x => {
@@ -201,12 +200,12 @@ export const CPU = ({ioGet, ioSet}) => {
         0x0d: arg => { // OFG
             const dest = arg();
             const offset = arg();
-            regSet(dest, memoryGet(SP - offset));
+            regSet(dest, memoryGet(SP - offset - 1));
         },
         0x0e: arg => { // OFS
             const src = arg();
             const offset = arg();
-            memorySet(SP - offset, regGet(src));
+            memorySet(SP - offset - 1, regGet(src));
         },
 
         0x0f: arg => { // POP
