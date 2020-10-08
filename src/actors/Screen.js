@@ -70,8 +70,10 @@ export const Screen = ({container, x, y}) => {
         onStep,
         onDestroy,
         changePixel: (x, y, value) => {
-            redraw = true;
-            data.set(x, y, value);
+            if (data.get(x, y) !== value){
+                redraw = true;
+                data.set(x, y, value);
+            }
         },
         width: () => 16,
         height: () => 16,
