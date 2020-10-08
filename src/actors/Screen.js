@@ -27,17 +27,14 @@ const COLOR_MAP = {
     [AQUA]: 0x00f0f0,
 };
 
-const PIXEL_WIDTH = 8;
-const PIXEL_HEIGHT = 12;
+const PIXEL_WIDTH = 32;
+const PIXEL_HEIGHT = 32;
 
 
 export const Screen = ({container, x, y}) => {
     // instance variables
-    const data = charArray(64, 24);
+    const data = charArray(16, 16);
     let redraw = true;
-
-    data.set(3, 5, AQUA);
-    data.set(3, 4, RED);
 
     //graphics
     const sprite = new Graphics();
@@ -47,18 +44,13 @@ export const Screen = ({container, x, y}) => {
 
     // update handler
     const onStep = ({delta, state}) => {
-        if (state.frame % 15n == 0n){
-            data.set(Number(state.frame / 15n) % 80, 13, GREEN);
-            redraw = true;
-        }
-
         if (redraw){
             sprite.clear();
            data.forEach((value, x, y) => {
                 sprite
                     .beginFill(COLOR_MAP[value] || COLOR_MAP[BLACK])
                     .drawRect(
-                        sprite.x + PIXEL_WIDTH*x, sprite.y + PIXEL_HEIGHT*y,
+                        PIXEL_WIDTH*x, PIXEL_HEIGHT*y,
                         PIXEL_WIDTH, PIXEL_HEIGHT
                     )
                     .endFill();
@@ -81,5 +73,7 @@ export const Screen = ({container, x, y}) => {
             redraw = true;
             data.set(x, y, value);
         },
+        width: () => 16,
+        height: () => 16,
     };
 };

@@ -1,3 +1,5 @@
+import { opcodeToName } from "./common.js";
+
 // a % m is negative if a is negative;
 // mod(a, m) is always non-negative if m is positive:
 const mod = (x, m) => x >= 0 ? x % m : (x % m) + m;
@@ -62,6 +64,7 @@ export const CPU = ({ioGet, ioSet}) => {
     };
 
     const memoryGet = addr => {
+
         if (addr < 0 || addr > 0xffff)
             throw new Error(`Programming error: ${addr} out of bounds`)
 
@@ -95,9 +98,19 @@ export const CPU = ({ioGet, ioSet}) => {
         (registers[reg] || registers.default).set(mod(x, 256));
 
 
+    const getStack = () => {
+        const rv = []
+        for (let i=SP; i>=0xf000; i--){
+            rv.push(ram[i]);
+        }
+        return rv;
+    };
+
+
     const stackPop = () => {
         SP--;
-        return ram[SP];
+        const p = ram[SP];
+        return p;
     };
 
     const stackPush = x => {
@@ -225,11 +238,17 @@ export const CPU = ({ioGet, ioSet}) => {
 
         0x15: arg => { // INC
             const dest = arg();
-            regSet(dest, regGet(dest) + 1);
+            const newValue = regGet(dest) + 1;
+            flagZero = (newValue === 256);
+            flagCarry = (newValue === 256);
+            regSet(dest, newValue);
         },
         0x16: arg => { // DEC
             const dest = arg();
-            regSet(dest, regGet(dest) - 1);
+            const newValue = regGet(dest) - 1;
+            flagZero = (newValue === 0);
+            flagCarry = (newValue === -1);
+            regSet(dest, newValue);
         },
 
         0x17: arg => { // ADD
@@ -271,7 +290,6 @@ export const CPU = ({ioGet, ioSet}) => {
         },
     };
 
-
     const run = () => {
         const readArgument = () => {
             const arg = memoryGet(IP);
@@ -286,9 +304,15 @@ export const CPU = ({ioGet, ioSet}) => {
         IP = startLow + startHigh*256;
 
         halted = false;
+        let cycles = 0;
         while (!halted) {
+            cycles++;
+
             const opcode = readArgument();
             const instruction = instructions[opcode];
+
+            if (cycles > 32000)
+                throw new Error(`Hung up!`);
 
             if (!instruction)
                 throw new Error(`Invalid opcode at IP=0x${IP.toString(16).padStart(4, "0")}: ${opcode}`);
