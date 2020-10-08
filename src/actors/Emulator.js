@@ -40,7 +40,7 @@ export const Emulator = ({sourceCode, screen, wasd}) => {
     // update handler
     const onStep = ({state}) => {
         if (state.frame % 4n === 0n)
-            cpu.run();
+            cpu.run({cyclesLimit: 16384});
     };
 
     // destruction handler
