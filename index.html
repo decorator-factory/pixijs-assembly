@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Hello World</title>
+    <style>
+        #game {
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.3/pixi.min.js"></script>
+</head>
+<body>
+
+<div id="game"></div>
+
+<script type="module">
+    import main from './src/main.js';
+
+    Object.assign(window,
+        {
+            Graphics: PIXI.Graphics,
+            Application: PIXI.Application,
+            loader: PIXI.Loader.shared,
+            resources: PIXI.Loader.shared.resources,
+            Sprite: PIXI.Sprite,
+            TextureCache: PIXI.utils.TextureCache,
+        });
+
+    const container = document.querySelector("#game");
+    main(container);
+</script>
+</body>
+</html>
