@@ -1,4 +1,10 @@
 export const program = `
+# Calling convention:
+# caller saves: d, m
+# callee saves: a, b, c
+# caller cleans up the stack with 'eat'
+
+
 .setup
     jmp %Game.main
 
@@ -7,20 +13,22 @@ private namespace Game
     namespace Point
         def draw
             # stack: 2 (x y)
-            # modifies: c d m
+            psh c
 
-            # stack[2] = y
-            ofg c 2
+            # c := y
+            ofg c 3
             num m 16
             mul c m
 
-            # stack[3] = x
-            ofg m 3
+            # m := x
+            ofg m 4
             add c m
 
             num d 0xe0
             num m 1
             ser c d
+
+            pop c
             ret
         namespace pop
     namespace pop
@@ -28,49 +36,76 @@ private namespace Game
 
     private namespace Treasure
         .coordinates
-            # x y
+            #   x    y
             dat 1    3
             dat 2    7
             dat 14   5
             dat 8    12
-            dat 0xff
+            dat 0xff 0xff
 
         def remove public
         use coordinates
             # stack: 1 (index)
-            # modifies: m
             psh a
             psh b
+            psh c
 
             # plan:
             # 1. go to p = (coordinates + index*2)
             # 2. set *p = 0
             # 3. set *(p+1) = 0
+            # 4. shift the rest of the treasures
 
-            # c := index
-            ofg m 4
+            private namespace
+            use coordinates
+                # m := index
+                ofg m 5
 
-            num a :coordinates
-            num b coordinates:
+                num a :coordinates
+                num b coordinates:
 
-            .loop
-                inc m
-                dec m
-                jiz %loop_end
-                    inl a b
-                    inl a b
+                .loop
+                    inc m
                     dec m
-                jmp %loop
-            .loop_end
+                    jiz %loop_end
+                        inl a b
+                        inl a b
+                        dec m
+                    jmp %loop
+                .loop_end
+            # now [a, b] is the address of treasure.x
+            namespace pop
 
-            num m 0
-            ser a b
-            inl a b
-            ser a b
+            private namespace
+                .loop
+                    mov c a
+                    mov d b
+                    inl a b
+                    inl a b
 
+                    # m := new x
+                    ger a b
+
+                    ser c d
+                    inl a b
+
+                    inl c d
+                    ger a b
+                    ser c d
+
+                    # if m == 0xff, goto %end:
+                    inc m
+                    jiz %loop_end
+                    dec m
+
+                    del a b
+                    jmp %loop
+                .loop_end
+            namespace pop
+
+            pop c
             pop b
             pop a
-
             ret
         namespace pop
 
@@ -79,6 +114,9 @@ private namespace Game
         use $.Point.draw
             # stack: 0 ()
             # modifies: a b c d m
+            psh a
+            psh b
+            psh c
 
             num a :coordinates
             num b coordinates:
@@ -105,6 +143,9 @@ private namespace Game
 
             .loop_end
 
+            pop c
+            pop b
+            pop a
             ret
         namespace pop
     namespace pop
@@ -121,7 +162,9 @@ private namespace Game
     namespace Screen
         def clear
             # stack: 0 ()
-            # modifies: a b c d m
+            psh a
+            psh b
+            psh c
 
             num b 0
             .by
@@ -149,6 +192,10 @@ private namespace Game
                 sub b d
                 pop b
                 jnz %by
+
+            pop c
+            pop b
+            pop a
             ret
         namespace pop
     namespace pop
@@ -160,6 +207,10 @@ private namespace Game
     use Screen.clear
     use Treasure.draw
     use Treasure.remove
+        psh a
+        psh b
+        psh c
+
         num m 0
         psh m
         clc %Treasure.remove
@@ -238,6 +289,9 @@ private namespace Game
             .skip
         namespace pop
 
+        pop c
+        pop b
+        pop a
         hlt
     namespace pop
 namespace pop
