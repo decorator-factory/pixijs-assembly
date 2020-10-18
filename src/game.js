@@ -14,8 +14,7 @@ const PROGRAM = `
     jmp :main main:
 
 
-.draw_point
-private namespace draw_point
+sub draw_point
     # stack: 2 (x y)
     # modifies: c d m
 
@@ -44,8 +43,7 @@ namespace pop
     dat 0xff
 
 
-.draw_treasure
-private namespace draw_treasure
+sub draw_treasure
     # stack: 0 ()
     # modifies: a b c d m
 
@@ -87,8 +85,7 @@ namespace pop
     dat 0
 
 
-.clear
-private namespace clear
+sub clear
     # stack: 0 ()
     # modifies: a b c d m
 
@@ -122,8 +119,7 @@ private namespace clear
 namespace pop
 
 
-.main
-private namespace main
+sub main
 use x
 use y
     clc :$.clear $.clear:
