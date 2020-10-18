@@ -15,7 +15,7 @@ const PROGRAM = `
 
 
 .draw_point
-namespace draw_point
+private namespace draw_point
     # stack: 2 (x y)
     # modifies: c d m
 
@@ -45,23 +45,27 @@ namespace pop
 
 
 .draw_treasure
-namespace draw_treasure
+private namespace draw_treasure
     # stack: 0 ()
     # modifies: a b c d m
 
     num a :$.treasure_points
     num b $.treasure_points:
-
     .loop
         ger a b
         num d 0xff
         sub m d
+
+
+
         jiz :loop_end loop_end:
         add m d
 
         psh m
 
         inl a b
+
+
         ger a b
         psh m
 
@@ -72,6 +76,7 @@ namespace draw_treasure
         jmp :loop loop:
 
     .loop_end
+
     ret
 namespace pop
 
@@ -83,7 +88,7 @@ namespace pop
 
 
 .clear
-namespace clear
+private namespace clear
     # stack: 0 ()
     # modifies: a b c d m
 
@@ -118,7 +123,7 @@ namespace pop
 
 
 .main
-namespace main
+private namespace main
 use x
 use y
     clc :$.clear $.clear:
