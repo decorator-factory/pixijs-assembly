@@ -52,7 +52,7 @@ const parseLine = (state, line) => {
         // .name
         // private namespace name
         state.registerLabel(g.SUB_NAME);
-        state.pushNamespace(g.NS + "__sub__" + randomId("0123456789abcdef", 8));
+        state.pushNamespace(g.SUB_NAME + "__sub__" + randomId("0123456789abcdef", 8));
     } else if (g.EXPORT) {
         state.exportLabel(g.EXPORT_NAME, g.EXPORT_ALIAS || g.EXPORT_NAME);
     } else if (g.USE) {
