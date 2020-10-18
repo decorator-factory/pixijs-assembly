@@ -35,6 +35,45 @@ private namespace Game
             dat 8    12
             dat 0xff
 
+        def remove public
+        use coordinates
+            # stack: 1 (index)
+            # modifies: m
+            psh a
+            psh b
+
+            # plan:
+            # 1. go to p = (coordinates + index*2)
+            # 2. set *p = 0
+            # 3. set *(p+1) = 0
+
+            # c := index
+            ofg m 4
+
+            num a :coordinates
+            num b coordinates:
+
+            .loop
+                inc m
+                dec m
+                jiz %loop_end
+                    inl a b
+                    inl a b
+                    dec m
+                jmp %loop
+            .loop_end
+
+            num m 0
+            ser a b
+            inl a b
+            ser a b
+
+            pop b
+            pop a
+
+            ret
+        namespace pop
+
         def draw public
         use coordinates
         use $.Point.draw
@@ -73,9 +112,9 @@ private namespace Game
 
     namespace Player
         .x
-            dat 0
+            dat 8
         .y
-            dat 0
+            dat 8
     namespace pop
 
 
@@ -120,6 +159,12 @@ private namespace Game
     use Player.y as y
     use Screen.clear
     use Treasure.draw
+    use Treasure.remove
+        num m 0
+        psh m
+        clc %Treasure.remove
+        eat 1
+
         clc %Screen.clear
         clc %Treasure.draw
 
