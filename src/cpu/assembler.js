@@ -136,7 +136,11 @@ export const parse = ({source, mountAddress}) => {
             if (!instruction)
                 throw new Error(`Unknown instruction ${op} (line ${lineno})`);
 
-            const rawArgs = argString.trim().split(/\s+/).filter(s => s !== "");
+            const rawArgs = argString
+                // turn `%x` into `:x x:` :
+                .replace(/%(.*)(?:\s|\b|$)/, (_, label) => `:${label} ${label}:`)
+                .split(/\s+/)
+                .filter(s => s !== "");
             if (instruction.args !== null && rawArgs.length !== instruction.args.length)
                 throw new Error(`Invalid argument count `
                                 +`(line ${lineno}, instruction ${op}): `
