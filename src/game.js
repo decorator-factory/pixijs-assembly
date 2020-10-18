@@ -47,10 +47,9 @@ namespace Treasure
 
     sub draw
         use coordinates
+        use $.Point.draw
         # stack: 0 ()
         # modifies: a b c d m
-
-        use $.Point.draw
 
         num a :coordinates
         num b coordinates:
@@ -82,50 +81,54 @@ namespace Treasure
 namespace pop
 
 
-.x
-    dat 0
-.y
-    dat 0
+namespace Player
+    .x
+        dat 0
+    .y
+        dat 0
+namespace pop
 
 
-sub clear
-    # stack: 0 ()
-    # modifies: a b c d m
+namespace Screen
+    sub clear
+        # stack: 0 ()
+        # modifies: a b c d m
 
-    num b 0
-    .by
-        num a 0
-        .ax
-            # c <- b*16 + a
-            mov c b
+        num b 0
+        .by
+            num a 0
+            .ax
+                # c <- b*16 + a
+                mov c b
+                num d 16
+                mul c d
+                add c a
+
+                num m 0
+                num d 0xe0
+                ser c d
+
+                inc a
+                psh a
+                num d 16
+                sub a d
+                pop a
+                jnz :ax ax:
+            inc b
+            psh b
             num d 16
-            mul c d
-            add c a
-
-            num m 0
-            num d 0xe0
-            ser c d
-
-            inc a
-            psh a
-            num d 16
-            sub a d
-            pop a
-            jnz :ax ax:
-        inc b
-        psh b
-        num d 16
-        sub b d
-        pop b
-        jnz :by by:
-    ret
+            sub b d
+            pop b
+            jnz :by by:
+        ret
+    namespace pop
 namespace pop
 
 
 sub main
-use x
-use y
-    clc :*.clear *.clear:
+    use Player.x as x
+    use Player.y as y
+    clc :*.Screen.clear *.Screen.clear:
     clc :*.Treasure.draw *.Treasure.draw:
 
     gec :x x:
