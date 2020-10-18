@@ -16,6 +16,7 @@ const buildRegex = flags => (...groups) => new RegExp(
 
 const LINE_REGEX = buildRegex("g")(
     ["NAMESPACE",   /(?<NS_PRIVATE>private\s+)?namespace\s+(?<NS_RESET>reset\s+)?(?<NS>[-_a-zA-Z0-9.]+)/],
+    ["SUB",         /sub\s+(?<SUB_NAME>[-_a-zA-Z0-9]+)/],
     ["EXPORT",      /export\s+(?<EXPORT_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<EXPORT_ALIAS>[-_a-zA-Z0-9.]+))?/],
     ["USE",         /use\s+(?<USE_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<USE_ALIAS>[-_a-zA-Z0-9.]+))?/],
     ["COMMENT",     /|#.*/],
@@ -42,9 +43,16 @@ const parseLine = (state, line) => {
         else if (g.NS === "pop")
             state.popNamespace();
         else if (g.NS_PRIVATE)
-            state.pushNamespace(g.NS + "__" + randomId("0123456789abcdef", 8));
+            state.pushNamespace(g.NS + "__p__" + randomId("0123456789abcdef", 8));
         else
             state.pushNamespace(g.NS);
+    } else if (g.SUB) {
+        // sub name
+        // <=>
+        // .name
+        // private namespace name
+        state.registerLabel(g.SUB_NAME);
+        state.pushNamespace(g.NS + "__sub__" + randomId("0123456789abcdef", 8));
     } else if (g.EXPORT) {
         state.exportLabel(g.EXPORT_NAME, g.EXPORT_ALIAS || g.EXPORT_NAME);
     } else if (g.USE) {
