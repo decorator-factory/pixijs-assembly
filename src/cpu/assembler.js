@@ -16,11 +16,11 @@ const buildRegex = flags => (...groups) => new RegExp(
 
 const LINE_REGEX = buildRegex("g")(
     ["NAMESPACE",   /(?<NS_PRIVATE>private\s+)?namespace\s*(?<NS_RESET>reset\s*)?(?<NS>[-_a-zA-Z0-9.]+)?/],
-    ["SUB",         /sub\s+(?<SUB_NAME>[-_a-zA-Z0-9]+)/],
+    ["DEF",         /def\s+(?<DEF_NAME>[-_a-zA-Z0-9]+)(?<DEF_EXPORT>\s+public(?:\s+as\s+(?<DEF_ALIAS>[-_a-zA-Z0-9.]+))?)?/],
     ["EXPORT",      /export\s+(?<EXPORT_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<EXPORT_ALIAS>[-_a-zA-Z0-9.]+))?/],
     ["USE",         /use\s+(?<USE_NAME>(\$+\.)?[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<USE_ALIAS>[-_a-zA-Z0-9.]+))?/],
     ["COMMENT",     /|#.*/],
-    ["LABEL",       /\.[-_a-zA-Z0-9]+/],
+    ["LABEL",       /\.(?<LABEL_NAME>[-_a-zA-Z0-9]+)(?<LABEL_EXPORT>\s+public(?:\s+as\s+(?<LABEL_ALIAS>[-_a-zA-Z0-9.]+))?)?/],
     ["INSTRUCTION", /(?<OP>[a-zA-Z]{3})\s*(?<ARGS>.*)/],
 );
 // -> LINE_REGEX = /(?<NAMESPACE>...)|(?<EXPORT>...)|.../
@@ -34,7 +34,13 @@ const parseLine = (state, line) => {
     const g = match.groups;
 
     if (g.LABEL) {
-        state.registerLabel(g.LABEL.slice(1));
+        state.registerLabel(g.LABEL_NAME);
+        if (g.LABEL_EXPORT){
+            const dn = state.demangledNamespace();
+            if (dn.split(".").slice(-1)[0] === "anon")
+                throw new Error(`Error on line ${state.lineno()}: cannot publish from anonymous namespace.`)
+            state.exportLabelAbsolute(g.LABEL_NAME, dn + "." + (g.LABEL_ALIAS || g.LABEL_NAME));
+        }
     } else if (g.INSTRUCTION) {
         state.insertInstruction(g.OP, g.ARGS);
     } else if (g.NAMESPACE) {
@@ -51,13 +57,26 @@ const parseLine = (state, line) => {
                                 +"'private namespace'?");
             else
                 state.pushNamespace(g.NS);
-    } else if (g.SUB) {
-        // sub name
+    } else if (g.DEF) {
+        // def name
         // <=>
         // .name
         // private namespace name
-        state.registerLabel(g.SUB_NAME);
-        state.pushNamespace(g.SUB_NAME + "__sub__" + randomId("0123456789abcdef", 8));
+
+        // def name export as alias
+        // <=>
+        // .name
+        // export name as alias
+        // private namespace name
+
+        state.registerLabel(g.DEF_NAME);
+        if (g.DEF_EXPORT){
+            const dn = state.demangledNamespace();
+            if (dn.split(".").slice(-1)[0] === "anon")
+                throw new Error(`Error on line ${state.lineno()}: cannot publish from anonymous namespace.`)
+            state.exportLabelAbsolute(g.DEF_NAME, dn + "." + (g.DEF_ALIAS || g.DEF_NAME));
+        }
+        state.pushNamespace(g.DEF_NAME + "__def__" + randomId("0123456789abcdef", 8));
     } else if (g.EXPORT) {
         state.exportLabel(g.EXPORT_NAME, g.EXPORT_ALIAS || g.EXPORT_NAME);
     } else if (g.USE) {
@@ -130,6 +149,14 @@ export const parse = ({source, mountAddress}) => {
     };
 
     const state = {
+        demangledNamespace: () => {
+            if (namespace === "")
+                return "";
+            const parts = namespace.split(".");
+            const [parents, [last]] = [parts.slice(0, -1), parts.slice(-1)];
+            parents.splice(parentNamespace().length + 1);
+            return parents.join(".") + "." + last.replace(/__.*/, "");
+        },
         lineno: () => lineno,
         registerLabel: name => {
             name = namespace + "." + name;
@@ -174,8 +201,13 @@ export const parse = ({source, mountAddress}) => {
             else
                 namespace += "." + ns;
         },
-        exportLabel: (label, alias) => {
+        exportLabel: (label, alias=null) => {
+            if (!alias)
+                alias = label;
             labels[parentNamespace() + "." + alias] = labels[namespace + "." + label];
+        },
+        exportLabelAbsolute: (label, alias) => {
+            labels[alias] = labels[namespace + "." + label];
         },
         useLabel: (label, alias=null) => {
             // TODO: clean up this function

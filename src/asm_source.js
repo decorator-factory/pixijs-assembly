@@ -5,7 +5,7 @@ export const program = `
 
 namespace Game
     namespace Point
-        sub draw
+        def draw
             # stack: 2 (x y)
             # modifies: c d m
 
@@ -26,7 +26,7 @@ namespace Game
     namespace pop
 
 
-    namespace Treasure
+    private namespace Treasure
         .coordinates
             # x y
             dat 1    3
@@ -35,7 +35,7 @@ namespace Game
             dat 8    12
             dat 0xff
 
-        sub draw
+        def draw public
         use coordinates
         use $.Point.draw
             # stack: 0 ()
@@ -80,7 +80,7 @@ namespace Game
 
 
     namespace Screen
-        sub clear
+        def clear
             # stack: 0 ()
             # modifies: a b c d m
 
@@ -115,7 +115,7 @@ namespace Game
     namespace pop
 
 
-    sub main
+    def main
     use Player.x as x
     use Player.y as y
     use Screen.clear
