@@ -15,6 +15,7 @@ const PROGRAM = `
 
 
 .draw_point
+namespace draw_point
     # stack: 2 (x y)
     # modifies: c d m
 
@@ -31,6 +32,7 @@ const PROGRAM = `
     num m 1
     ser c d
     ret
+namespace pop
 
 
 .treasure_points
@@ -71,7 +73,7 @@ namespace draw_treasure
 
     .loop_end
     ret
-namespace global
+namespace pop
 
 
 .x
@@ -112,7 +114,7 @@ namespace clear
         pop b
         jnz :by by:
     ret
-namespace global
+namespace pop
 
 
 .main
@@ -185,10 +187,7 @@ use y
     .skip4
 
     hlt
-namespace global
-
-
-
+namespace pop
 `;
 
 
