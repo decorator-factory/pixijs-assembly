@@ -46,9 +46,12 @@ namespace Game
         .coordinates
             #   x    y
             dat 1    3
+            dat 4    5
             dat 2    7
             dat 14   5
+            dat 10   10
             dat 8    12
+            dat 5    9
             dat 0xff 0xff
 
         def collides public
