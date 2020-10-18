@@ -1,12 +1,24 @@
 import { instructions, registers } from "./common.js";
 
 
-// TODO: do... something... with this... regular... expression...
-const LINE_REGEX = /\s*(?:(?<NAMESPACE>namespace\s+(?<NS>[-_a-zA-Z0-9.]+))|(?<EXPORT>export\s+(?<EXPORT_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<EXPORT_ALIAS>[-_a-zA-Z0-9.]+))?)|(?<USE>use\s+(?<USE_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<USE_ALIAS>[-_a-zA-Z0-9.]+))?)|(?<COMMENT>$|#.*$)|(?<LABEL>\.[-_a-zA-Z0-9]+$)|(?<INSTRUCTION>(?<OP>[a-zA-Z]{3})\s*(?<ARGS>.*)))\s*/g;
+const buildRegex = flags => (...groups) => new RegExp(
+    groups.map(([name, regex]) => `(?<${name}>(?:${regex.source})$)`).join("|"),
+    flags
+);
+
+const LINE_REGEX = buildRegex("g")(
+    ["NAMESPACE",   /namespace\s+(?<NS>[-_a-zA-Z0-9.]+)/],
+    ["EXPORT",      /export\s+(?<EXPORT_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<EXPORT_ALIAS>[-_a-zA-Z0-9.]+))?/],
+    ["USE",         /use\s+(?<USE_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<USE_ALIAS>[-_a-zA-Z0-9.]+))?/],
+    ["COMMENT",     /|#.*/],
+    ["LABEL",       /\.[-_a-zA-Z0-9]+/],
+    ["INSTRUCTION", /(?<OP>[a-zA-Z]{3})\s*(?<ARGS>.*)/],
+);
+// -> LINE_REGEX = /(?<NAMESPACE>...)|(?<EXPORT>...)|.../
 
 
 const parseLine = (state, line) => {
-    const [match] = [...line.matchAll(LINE_REGEX)];
+    const [match] = [...line.trim().matchAll(LINE_REGEX)];
     if (!match)
         throw new Error(`Syntax error on line ${state.lineno()}: ${line}`)
 
