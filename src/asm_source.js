@@ -35,8 +35,8 @@ namespace Treasure
         dat 0xff
 
     sub draw
-        use coordinates
-        use $.Point.draw
+    use coordinates
+    use $.Point.draw
         # stack: 0 ()
         # modifies: a b c d m
 
@@ -61,7 +61,7 @@ namespace Treasure
             eat 2
 
             inl a b
-            jmp :loop loop:
+            jmp %loop
 
         .loop_end
 
@@ -102,13 +102,13 @@ namespace Screen
                 num d 16
                 sub a d
                 pop a
-                jnz :ax ax:
+                jnz %ax
             inc b
             psh b
             num d 16
             sub b d
             pop b
-            jnz :by by:
+            jnz %by
         ret
     namespace pop
 namespace pop
@@ -140,7 +140,7 @@ use Player.y as y
             gec %x
             dec m
             jic %skip
-                sec :x x:
+                sec %x
         .skip
     namespace pop
 
