@@ -79,7 +79,7 @@ const parseArg = (lineno, namespace) => arg => {
     if (arg.startsWith(":")) // low byte
         return labels => {
             const n =
-                arg[1] === "$" && arg[2] === "."
+                arg[1] === "*" && arg[2] === "."
                 ? labels[normalizeLabel(arg.slice(3))]
                 : labels[namespace + "." + arg.slice(1)];
             if (n === undefined){
@@ -90,7 +90,7 @@ const parseArg = (lineno, namespace) => arg => {
     else if (arg.endsWith(":")) // high byte
         return labels => {
             const n =
-                arg[0] === "$" && arg[1] === "."
+                arg[0] === "*" && arg[1] === "."
                 ? labels[normalizeLabel(arg.slice(2,-1))]
                 : labels[namespace + "." + arg.slice(0, -1)];
             if (n === undefined){
