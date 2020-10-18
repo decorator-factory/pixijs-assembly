@@ -1,13 +1,21 @@
 import { instructions, registers } from "./common.js";
 
 
+const randomId = (base, length) => {
+    const result = [];
+    for (let i = 0; i<length; i++)
+        result.push(base[Math.floor(Math.random() * base.length)]);
+    return result.join("");
+}
+
+
 const buildRegex = flags => (...groups) => new RegExp(
     groups.map(([name, regex]) => `(?<${name}>(?:${regex.source})$)`).join("|"),
     flags
 );
 
 const LINE_REGEX = buildRegex("g")(
-    ["NAMESPACE",   /namespace\s+(?<NS_RESET>reset\s+)?(?<NS>[-_a-zA-Z0-9.]+)/],
+    ["NAMESPACE",   /(?<NS_PRIVATE>private\s+)?namespace\s+(?<NS_RESET>reset\s+)?(?<NS>[-_a-zA-Z0-9.]+)/],
     ["EXPORT",      /export\s+(?<EXPORT_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<EXPORT_ALIAS>[-_a-zA-Z0-9.]+))?/],
     ["USE",         /use\s+(?<USE_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<USE_ALIAS>[-_a-zA-Z0-9.]+))?/],
     ["COMMENT",     /|#.*/],
@@ -33,6 +41,8 @@ const parseLine = (state, line) => {
             state.setNamespace(g.NS === "global" ? "" : g.NS);
         else if (g.NS === "pop")
             state.popNamespace();
+        else if (g.NS_PRIVATE)
+            state.pushNamespace(g.NS + "__" + randomId("0123456789abcdef", 8));
         else
             state.pushNamespace(g.NS);
     } else if (g.EXPORT) {
@@ -94,7 +104,7 @@ export const parse = ({source, mountAddress}) => {
     const parentNamespace = () => {
         if (namespace === "")
             throw new Error(`Global namespace has no parent (line ${lineno})`);
-        return namespace.split(".").slice(0, -1).join();
+        return namespace.split(".").slice(0, -1).join(".");
     };
 
     const state = {
@@ -152,6 +162,9 @@ export const parse = ({source, mountAddress}) => {
         parseLine(state, line);
         lineno++;
     }
+
+    // this console.log is for demonstration purposes
+    console.log(labels);
 
     return byteFactories.map(f => f(labels));
 }
