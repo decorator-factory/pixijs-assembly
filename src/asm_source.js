@@ -9,7 +9,7 @@ export const program = `
     jmp %Game.main
 
 
-private namespace Game
+namespace Game
     namespace Point
         def draw
             # stack: 2 (x y)
@@ -34,6 +34,14 @@ private namespace Game
     namespace pop
 
 
+    namespace Player
+        .x
+            dat 8
+        .y
+            dat 8
+    namespace pop
+
+
     private namespace Treasure
         .coordinates
             #   x    y
@@ -42,6 +50,64 @@ private namespace Game
             dat 14   5
             dat 8    12
             dat 0xff 0xff
+
+        def collides public
+        use coordinates
+        use $.Player.x as x
+        use $.Player.y as y
+            # return value: d
+            psh a
+            psh b
+            psh c
+
+            num c 0
+            num a :coordinates
+            num b coordinates:
+
+            .loop
+                # d := treasure.x
+                ger a b
+                mov d m
+                # if d == 0xff: goto %fail
+                inc d
+                jiz %fail
+                dec d
+
+                # m := player.x
+                gec %x
+
+                # if m != d: goto next
+                sub d m
+                inl a b
+                jnz %next
+
+
+                # d := treasure.y
+                ger a b
+                mov d m
+
+                # m := player.y
+                gec %y
+
+                # if m != d: goto next
+                sub d m
+                jnz %next
+
+                mov d c
+                jmp %ret
+            .next
+                inc c
+                inl a b
+                jmp %loop
+
+            .fail
+                num d 0xff
+            .ret
+            pop c
+            pop b
+            pop a
+            ret
+        namespace pop
 
         def remove public
         use coordinates
@@ -151,14 +217,6 @@ private namespace Game
     namespace pop
 
 
-    namespace Player
-        .x
-            dat 8
-        .y
-            dat 8
-    namespace pop
-
-
     namespace Screen
         def clear
             # stack: 0 ()
@@ -206,18 +264,32 @@ private namespace Game
     use Player.y as y
     use Screen.clear
     use Treasure.draw
+    use Treasure.collides
     use Treasure.remove
+    use Point.draw
         psh a
         psh b
         psh c
 
-        num m 0
-        psh m
-        clc %Treasure.remove
-        eat 1
-
         clc %Screen.clear
         clc %Treasure.draw
+
+        private namespace
+        use Treasure.remove
+        use Treasure.collides
+            clc %Treasure.collides
+
+            # if d == 0xff, no collision
+            inc d
+            jiz %not_found
+            dec d
+
+            psh d
+            clc %Treasure.remove
+            eat 1
+
+            .not_found
+        namespace pop
 
         gec %x
         mov a m
