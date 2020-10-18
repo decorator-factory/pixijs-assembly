@@ -11,12 +11,7 @@ export const load = loader => {
 
 const PROGRAM = `
 .setup
-    # change the entry point to .main:
-    num m :main
-    sec 0x00 0x00
-    num m main:
-    sec 0x00 0x01
-    hlt
+    jmp :main main:
 
 
 .draw_point
@@ -38,7 +33,7 @@ const PROGRAM = `
     ret
 
 
-.pieces
+.treasure_points
     # x y
     dat 1    3
     dat 2    7
@@ -48,17 +43,18 @@ const PROGRAM = `
 
 
 .draw_treasure
+namespace draw_treasure
     # stack: 0 ()
     # modifies: a b c d m
 
-    num a :pieces
-    num b pieces:
+    num a :$.treasure_points
+    num b $.treasure_points:
 
-    ._draw_treasure_loop
+    .loop
         ger a b
         num d 0xff
         sub m d
-        jiz :_draw_treasure_loop_end _draw_treasure_loop_end:
+        jiz :loop_end loop_end:
         add m d
 
         psh m
@@ -67,14 +63,15 @@ const PROGRAM = `
         ger a b
         psh m
 
-        clc :draw_point draw_point:
+        clc :$.draw_point $.draw_point:
         eat 2
 
         inl a b
-        jmp :_draw_treasure_loop _draw_treasure_loop:
+        jmp :loop loop:
 
-    ._draw_treasure_loop_end
+    .loop_end
     ret
+namespace global
 
 
 .x
@@ -84,13 +81,14 @@ const PROGRAM = `
 
 
 .clear
+namespace clear
     # stack: 0 ()
     # modifies: a b c d m
 
     num b 0
-    ._clear_by
+    .by
         num a 0
-        ._clear_ax
+        .ax
             # c <- b*16 + a
             mov c b
             num d 16
@@ -106,19 +104,23 @@ const PROGRAM = `
             num d 16
             sub a d
             pop a
-            jnz :_clear_ax _clear_ax:
+            jnz :ax ax:
         inc b
         psh b
         num d 16
         sub b d
         pop b
-        jnz :_clear_by _clear_by:
+        jnz :by by:
     ret
+namespace global
 
 
 .main
-    clc :clear clear:
-    clc :draw_treasure draw_treasure:
+namespace main
+use x
+use y
+    clc :$.clear $.clear:
+    clc :$.draw_treasure $.draw_treasure:
 
     gec :x x:
     mov a m
@@ -183,6 +185,7 @@ const PROGRAM = `
     .skip4
 
     hlt
+namespace global
 
 
 

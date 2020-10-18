@@ -1,7 +1,8 @@
 import { instructions, registers } from "./common.js";
 
 
-const LINE_REGEX = /\s*(?:(?<COMMENT>$|#.*$)|(?<LABEL>\.[-_a-zA-Z0-9]+$)|(?<INSTRUCTION>(?<OP>[a-zA-Z]{3})\s*(?<ARGS>.*)))/g;
+// TODO: do... something... with this... regular... expression...
+const LINE_REGEX = /\s*(?:(?<NAMESPACE>namespace\s+(?<NS>[-_a-zA-Z0-9.]+))|(?<EXPORT>export\s+(?<EXPORT_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<EXPORT_ALIAS>[-_a-zA-Z0-9.]+))?)|(?<USE>use\s+(?<USE_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<USE_ALIAS>[-_a-zA-Z0-9.]+))?)|(?<COMMENT>$|#.*$)|(?<LABEL>\.[-_a-zA-Z0-9]+$)|(?<INSTRUCTION>(?<OP>[a-zA-Z]{3})\s*(?<ARGS>.*)))\s*/g;
 
 
 const parseLine = (state, line) => {
@@ -9,31 +10,52 @@ const parseLine = (state, line) => {
     if (!match)
         throw new Error(`Syntax error on line ${state.lineno()}: ${line}`)
 
-    if (match.groups.LABEL) {
-        state.registerLabel(match.groups.LABEL.slice(1));
-    } else if (match.groups.INSTRUCTION) {
-        state.insertInstruction(match.groups.OP, match.groups.ARGS);
+    const g = match.groups;
+
+    if (g.LABEL) {
+        state.registerLabel(g.LABEL.slice(1));
+    } else if (g.INSTRUCTION) {
+        state.insertInstruction(g.OP, g.ARGS);
+    } else if (g.NAMESPACE) {
+        if (g.NS === "global")
+            state.setNamespace("");
+        else
+            state.setNamespace(g.NS);
+    } else if (g.EXPORT) {
+        state.exportLabel(g.EXPORT_NAME, g.EXPORT_ALIAS || g.EXPORT_NAME);
+    } else if (g.USE) {
+        state.useLabel(g.USE_NAME, g.USE_ALIAS || g.USE_NAME)
     }
 };
 
 
 
-const parseArg = lineno => arg => {
+const parseArg = (lineno, namespace) => arg => {
     //@ Return a function (labels: Map<string, number>) => number.
     //@ This solves the issue of referring to labels which are
     //@ defined later on in the code.
     if (arg.startsWith(":")) // low byte
         return labels => {
-            const n = labels[arg.slice(1)];
-            if (n === undefined)
+            const n =
+                arg[1] === "$"
+                ? labels[arg.slice(2)]
+                : labels[namespace + "." + arg.slice(1)];
+            if (n === undefined){
+                console.log({namespace, labels});
                 throw new Error(`Undefined label ${arg} at line ${lineno}`);
+            }
             return n % 256;
         };
     else if (arg.endsWith(":")) // high byte
         return labels => {
-            const n = labels[arg.slice(0, -1)];
-            if (n === undefined)
+            const n =
+                arg[0] === "$"
+                ? labels[arg.slice(1,-1)]
+                : labels[namespace + "." + arg.slice(0, -1)];
+            if (n === undefined){
+                console.log({namespace, labels});
                 throw new Error(`Undefined label ${arg} at line ${lineno}`);
+            }
             return n >> 8;
         };
     else if (!isNaN(parseInt(arg)))
@@ -53,9 +75,18 @@ export const parse = ({source, mountAddress}) => {
     // byteFactories: Array<(labels: Map<string, number>) => number>
     let byteFactories = [];
 
+    let namespace = "";
+
+    const parentNamespace = () => {
+        if (namespace === "")
+            throw new Error(`Global namespace has no parent (line ${lineno})`);
+        return namespace.split(".").slice(0, -1).join();
+    };
+
     const state = {
         lineno: () => lineno,
         registerLabel: name => {
+            name = namespace + "." + name;
             if (name in labels)
                 throw new Error(`label ${name} already defined (line ${lineno})`);
             labels[name] = instructionPointer;
@@ -72,7 +103,7 @@ export const parse = ({source, mountAddress}) => {
                                 +`expected ${instruction.args.length}, `
                                 +`got ${rawArgs.length}`);
 
-            const args = rawArgs.map(parseArg(lineno));
+            const args = rawArgs.map(parseArg(lineno, namespace));
             if (instruction.op !== null){
                 [() => instruction.op, ...args].forEach(f => byteFactories.push(f));
                 instructionPointer += 1 + args.length;
@@ -80,6 +111,15 @@ export const parse = ({source, mountAddress}) => {
                 args.forEach(f => byteFactories.push(f));
                 instructionPointer += args.length;
             }
+        },
+        setNamespace: ns => {
+            namespace = ns;
+        },
+        exportLabel: (label, alias) => {
+            labels[parentNamespace() + "." + alias] = labels[label];
+        },
+        useLabel: (label, alias) => {
+            labels[namespace + "." + alias] = labels["." + label];
         },
     };
 
