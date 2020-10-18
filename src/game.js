@@ -14,68 +14,71 @@ const PROGRAM = `
     jmp :main main:
 
 
-sub draw_point
-    # stack: 2 (x y)
-    # modifies: c d m
+namespace Point
+    sub draw
+        # stack: 2 (x y)
+        # modifies: c d m
 
-    # stack[2] = y
-    ofg c 2
-    num m 16
-    mul c m
+        # stack[2] = y
+        ofg c 2
+        num m 16
+        mul c m
 
-    # stack[3] = x
-    ofg m 3
-    add c m
+        # stack[3] = x
+        ofg m 3
+        add c m
 
-    num d 0xe0
-    num m 1
-    ser c d
-    ret
+        num d 0xe0
+        num m 1
+        ser c d
+        ret
+    namespace pop
 namespace pop
 
 
-.treasure_points
-    # x y
-    dat 1    3
-    dat 2    7
-    dat 14   5
-    dat 8    12
-    dat 0xff
+namespace Treasure
+    .coordinates
+        # x y
+        dat 1    3
+        dat 2    7
+        dat 14   5
+        dat 8    12
+        dat 0xff
 
+    sub draw
+        use coordinates
+        # stack: 0 ()
+        # modifies: a b c d m
 
-sub draw_treasure
-    # stack: 0 ()
-    # modifies: a b c d m
+        use $.Point.draw
 
-    num a :$.treasure_points
-    num b $.treasure_points:
-    .loop
-        ger a b
-        num d 0xff
-        sub m d
+        num a :coordinates
+        num b coordinates:
+        .loop
+            ger a b
+            num d 0xff
+            sub m d
 
+            jiz :loop_end loop_end:
+            add m d
 
+            psh m
 
-        jiz :loop_end loop_end:
-        add m d
+            inl a b
 
-        psh m
+            ger a b
+            psh m
 
-        inl a b
+            clc :Point.draw Point.draw:
+            eat 2
 
+            inl a b
+            jmp :loop loop:
 
-        ger a b
-        psh m
+        .loop_end
 
-        clc :$.draw_point $.draw_point:
-        eat 2
-
-        inl a b
-        jmp :loop loop:
-
-    .loop_end
-
-    ret
+        ret
+    namespace pop
 namespace pop
 
 
@@ -122,8 +125,8 @@ namespace pop
 sub main
 use x
 use y
-    clc :$.clear $.clear:
-    clc :$.draw_treasure $.draw_treasure:
+    clc :*.clear *.clear:
+    clc :*.Treasure.draw *.Treasure.draw:
 
     gec :x x:
     mov a m
