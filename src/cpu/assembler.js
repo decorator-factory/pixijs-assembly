@@ -78,10 +78,13 @@ const parseArg = (lineno, namespace) => arg => {
     //@ defined later on in the code.
     if (arg.startsWith(":")) // low byte
         return labels => {
-            const n =
+            const qualifiedName =
                 arg[1] === "*" && arg[2] === "."
-                ? labels[normalizeLabel(arg.slice(3))]
-                : labels[namespace + "." + arg.slice(1)];
+                ? normalizeLabel(arg.slice(3))
+                : namespace === ""
+                    ? arg.slice(1)
+                    : namespace + "." + arg.slice(1);
+            const n = labels[qualifiedName];
             if (n === undefined){
                 throw new Error(`Undefined label ${arg} at line ${lineno}`);
             }
@@ -89,10 +92,13 @@ const parseArg = (lineno, namespace) => arg => {
         };
     else if (arg.endsWith(":")) // high byte
         return labels => {
-            const n =
+            const qualifiedName =
                 arg[0] === "*" && arg[1] === "."
-                ? labels[normalizeLabel(arg.slice(2,-1))]
-                : labels[namespace + "." + arg.slice(0, -1)];
+                ? normalizeLabel(arg.slice(2,-1))
+                : namespace === ""
+                    ? arg.slice(0, -1)
+                    : namespace + "." + arg.slice(0, -1);
+            const n = labels[qualifiedName];
             if (n === undefined){
                 throw new Error(`Undefined label ${arg} at line ${lineno}`);
             }
@@ -186,7 +192,7 @@ export const parse = ({source, mountAddress}) => {
                 alias = label;
 
             let qualifiedName = parent + "." + label;
-            if ([...qualifiedName].filter(c => c === ".").length > 1)
+            if ([...qualifiedName].filter(c => c === ".").length > 1 && qualifiedName.startsWith("."))
                 qualifiedName = qualifiedName.slice(1);
 
             labels[namespace + "." + alias] = labels[qualifiedName];
