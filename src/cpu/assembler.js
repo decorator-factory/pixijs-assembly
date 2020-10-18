@@ -128,10 +128,12 @@ export const parse = ({source, mountAddress}) => {
             namespace = ns;
         },
         exportLabel: (label, alias) => {
-            labels[parentNamespace() + "." + alias] = labels[label];
+            labels[parentNamespace() + "." + alias] = labels[namespace + "." + label];
         },
         useLabel: (label, alias) => {
-            labels[namespace + "." + alias] = labels["." + label];
+            if (!label.includes("."))
+                label = "." + label; // global labels start with `.`
+            labels[namespace + "." + alias] = labels[label];
         },
     };
 
