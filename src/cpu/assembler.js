@@ -49,7 +49,7 @@ const parseLine = (state, line) => {
         else if (g.NS === "pop")
             state.popNamespace();
         else if (g.NS_PRIVATE)
-            state.pushNamespace((g.NS || "anon") + "__p__" + randomId("0123456789abcdef", 8));
+            state.pushNamespace((g.NS || "anon") + "__p__" + randomId("0123456789abcdefghijklmnopqsuvwxuz", 8));
         else
             if (!g.NS)
                 throw new Error(`Syntax error on line ${state.lineno()}: public `
@@ -76,7 +76,7 @@ const parseLine = (state, line) => {
                 throw new Error(`Error on line ${state.lineno()}: cannot publish from anonymous namespace.`)
             state.exportLabelAbsolute(g.DEF_NAME, dn + "." + (g.DEF_ALIAS || g.DEF_NAME));
         }
-        state.pushNamespace(g.DEF_NAME + "__def__" + randomId("0123456789abcdef", 8));
+        state.pushNamespace(g.DEF_NAME + "__def__" + randomId("0123456789abcdefghijklmnopqsuvwxuz", 8));
     } else if (g.EXPORT) {
         state.exportLabel(g.EXPORT_NAME, g.EXPORT_ALIAS || g.EXPORT_NAME);
     } else if (g.USE) {
