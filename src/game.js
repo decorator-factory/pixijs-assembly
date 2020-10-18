@@ -11,7 +11,7 @@ export const load = loader => {
 
 const PROGRAM = `
 .setup
-    jmp :main main:
+    jmp %main
 
 
 namespace Point
@@ -58,7 +58,7 @@ namespace Treasure
             num d 0xff
             sub m d
 
-            jiz :loop_end loop_end:
+            jiz %loop_end
             add m d
 
             psh m
@@ -68,7 +68,7 @@ namespace Treasure
             ger a b
             psh m
 
-            clc :Point.draw Point.draw:
+            clc %Point.draw
             eat 2
 
             inl a b
@@ -126,15 +126,15 @@ namespace pop
 
 
 sub main
-    use Player.x as x
-    use Player.y as y
-    clc :*.Screen.clear *.Screen.clear:
-    clc :*.Treasure.draw *.Treasure.draw:
+use Player.x as x
+use Player.y as y
+    clc %*.Screen.clear
+    clc %*.Treasure.draw
 
-    gec :x x:
+    gec %x
     mov a m
 
-    gec :y y:
+    gec %y
     num b 16
     mul b m
     add a b
@@ -143,55 +143,63 @@ sub main
     num b 0xe0
     ser a b
 
-    # left button? -> M
-    gec 0x00 0xe1
-    add m m
-    jiz :skip1 skip1:
-        gec :x x:
-        dec m
-        jic :skip1 skip1:
-            sec :x x:
-    .skip1
+    private namespace on_left_button
+    use x
+        gec 0x00 0xe1
+        add m m
+        jiz %skip
+            gec %x
+            dec m
+            jic %skip
+                sec :x x:
+        .skip
+    namespace pop
 
-    # right button? -> M
-    gec 0x01 0xe1
-    add m m
-    jiz :skip2 skip2:
-        gec :x x:
-        inc m
+    private namespace on_right_button
+    use x
+        gec 0x01 0xe1
+        add m m
+        jiz %skip
+            gec %x
+            inc m
 
-        psh m
-        num d 16
-        sub m d
-        pop m
-        jiz :skip2 skip2:
-            sec :x x:
-    .skip2
+            psh m
+            num d 16
+            sub m d
+            pop m
+            jiz %skip
+                sec %x
+        .skip
+    namespace pop
 
-    # up button? -> M
-    gec 0x02 0xe1
-    add m m
-    jiz :skip3 skip3:
-        gec :y y:
-        dec m
-        jic :skip3 skip3:
-            sec :y y:
-    .skip3
+    private namespace on_up_button
+    use y
+        gec 0x02 0xe1
+        add m m
+        jiz %skip
+            gec %y
+            dec m
+            jic %skip
+                sec %y
+        .skip
+    namespace pop
 
-    # down button? -> M
-    gec 0x03 0xe1
-    add m m
-    jiz :skip4 skip4:
-        gec :y y:
-        inc m
+    private namespace on_up_button
+    use y
+        gec 0x03 0xe1
+        add m m
+        jiz %skip
+            gec %y
+            inc m
 
-        psh m
-        num d 16
-        sub m d
-        pop m
-        jiz :skip4 skip4:
-            sec :y y:
-    .skip4
+            psh m
+            num d 16
+            sub m d
+            pop m
+            jiz %skip
+                sec %y
+        .skip
+    namespace pop
 
     hlt
 namespace pop
