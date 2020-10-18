@@ -18,7 +18,7 @@ const LINE_REGEX = buildRegex("g")(
     ["NAMESPACE",   /(?<NS_PRIVATE>private\s+)?namespace\s*(?<NS_RESET>reset\s*)?(?<NS>[-_a-zA-Z0-9.]+)?/],
     ["SUB",         /sub\s+(?<SUB_NAME>[-_a-zA-Z0-9]+)/],
     ["EXPORT",      /export\s+(?<EXPORT_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<EXPORT_ALIAS>[-_a-zA-Z0-9.]+))?/],
-    ["USE",         /use\s+(?<USE_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<USE_ALIAS>[-_a-zA-Z0-9.]+))?/],
+    ["USE",         /use\s+(?<USE_NAME>(\$+\.)?[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<USE_ALIAS>[-_a-zA-Z0-9.]+))?/],
     ["COMMENT",     /|#.*/],
     ["LABEL",       /\.[-_a-zA-Z0-9]+/],
     ["INSTRUCTION", /(?<OP>[a-zA-Z]{3})\s*(?<ARGS>.*)/],
@@ -61,7 +61,7 @@ const parseLine = (state, line) => {
     } else if (g.EXPORT) {
         state.exportLabel(g.EXPORT_NAME, g.EXPORT_ALIAS || g.EXPORT_NAME);
     } else if (g.USE) {
-        state.useLabel(g.USE_NAME, g.USE_ALIAS || g.USE_NAME)
+        state.useLabel(g.USE_NAME, g.USE_ALIAS)
     }
 };
 
@@ -83,7 +83,6 @@ const parseArg = (lineno, namespace) => arg => {
                 ? labels[normalizeLabel(arg.slice(3))]
                 : labels[namespace + "." + arg.slice(1)];
             if (n === undefined){
-                console.log({namespace, labels});
                 throw new Error(`Undefined label ${arg} at line ${lineno}`);
             }
             return n % 256;
@@ -95,7 +94,6 @@ const parseArg = (lineno, namespace) => arg => {
                 ? labels[normalizeLabel(arg.slice(2,-1))]
                 : labels[namespace + "." + arg.slice(0, -1)];
             if (n === undefined){
-                console.log({namespace, labels});
                 throw new Error(`Undefined label ${arg} at line ${lineno}`);
             }
             return n >> 8;
@@ -169,10 +167,25 @@ export const parse = ({source, mountAddress}) => {
         exportLabel: (label, alias) => {
             labels[parentNamespace() + "." + alias] = labels[namespace + "." + label];
         },
-        useLabel: (label, alias) => {
-            if (!label.includes("."))
-                label = "." + label; // global labels start with `.`
-            labels[namespace + "." + alias] = labels[label];
+        useLabel: (label, alias=null) => {
+            // TODO: clean up this function
+
+            let parent = parentNamespace();
+            while (label.startsWith("$")){
+                parent = parent.split(".").slice(0, -1).join(".");
+                label = label.slice(1);
+            }
+
+            while (label.startsWith("."))
+                label = label.slice(1);
+            if (!alias)
+                alias = label;
+
+            let qualifiedName = parent + "." + label;
+            if ([...qualifiedName].filter(c => c === ".").length > 1)
+                qualifiedName = qualifiedName.slice(1);
+
+            labels[namespace + "." + alias] = labels[qualifiedName];
         },
     };
 
