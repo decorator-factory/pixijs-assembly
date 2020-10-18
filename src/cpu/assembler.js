@@ -15,7 +15,7 @@ const buildRegex = flags => (...groups) => new RegExp(
 );
 
 const LINE_REGEX = buildRegex("g")(
-    ["NAMESPACE",   /(?<NS_PRIVATE>private\s+)?namespace\s+(?<NS_RESET>reset\s+)?(?<NS>[-_a-zA-Z0-9.]+)/],
+    ["NAMESPACE",   /(?<NS_PRIVATE>private\s+)?namespace\s*(?<NS_RESET>reset\s*)?(?<NS>[-_a-zA-Z0-9.]+)?/],
     ["SUB",         /sub\s+(?<SUB_NAME>[-_a-zA-Z0-9]+)/],
     ["EXPORT",      /export\s+(?<EXPORT_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<EXPORT_ALIAS>[-_a-zA-Z0-9.]+))?/],
     ["USE",         /use\s+(?<USE_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<USE_ALIAS>[-_a-zA-Z0-9.]+))?/],
@@ -39,13 +39,18 @@ const parseLine = (state, line) => {
         state.insertInstruction(g.OP, g.ARGS);
     } else if (g.NAMESPACE) {
         if (g.NS_RESET)
-            state.setNamespace(g.NS === "global" ? "" : g.NS);
+            state.setNamespace(g.NS === "global" || !g.NS ? "" : g.NS);
         else if (g.NS === "pop")
             state.popNamespace();
         else if (g.NS_PRIVATE)
-            state.pushNamespace(g.NS + "__p__" + randomId("0123456789abcdef", 8));
+            state.pushNamespace((g.NS || "anon") + "__p__" + randomId("0123456789abcdef", 8));
         else
-            state.pushNamespace(g.NS);
+            if (!g.NS)
+                throw new Error(`Syntax error on line ${state.lineno()}: public `
+                                +"namespace cannot be anonymous; did you mean"
+                                +"'private namespace'?");
+            else
+                state.pushNamespace(g.NS);
     } else if (g.SUB) {
         // sub name
         // <=>
