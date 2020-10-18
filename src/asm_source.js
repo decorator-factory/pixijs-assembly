@@ -3,7 +3,7 @@ export const program = `
     jmp %Game.main
 
 
-namespace Game
+private namespace Game
     namespace Point
         def draw
             # stack: 2 (x y)
@@ -115,7 +115,7 @@ namespace Game
     namespace pop
 
 
-    def main
+    def main public
     use Player.x as x
     use Player.y as y
     use Screen.clear
