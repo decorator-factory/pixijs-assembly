@@ -7,7 +7,7 @@ const buildRegex = flags => (...groups) => new RegExp(
 );
 
 const LINE_REGEX = buildRegex("g")(
-    ["NAMESPACE",   /namespace\s+(?<NS>[-_a-zA-Z0-9.]+)/],
+    ["NAMESPACE",   /namespace\s+(?<NS_RESET>reset\s+)?(?<NS>[-_a-zA-Z0-9.]+)/],
     ["EXPORT",      /export\s+(?<EXPORT_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<EXPORT_ALIAS>[-_a-zA-Z0-9.]+))?/],
     ["USE",         /use\s+(?<USE_NAME>[-_a-zA-Z0-9.]+)(?:\s+as\s+(?<USE_ALIAS>[-_a-zA-Z0-9.]+))?/],
     ["COMMENT",     /|#.*/],
@@ -29,10 +29,12 @@ const parseLine = (state, line) => {
     } else if (g.INSTRUCTION) {
         state.insertInstruction(g.OP, g.ARGS);
     } else if (g.NAMESPACE) {
-        if (g.NS === "global")
-            state.setNamespace("");
+        if (g.NS_RESET)
+            state.setNamespace(g.NS === "global" ? "" : g.NS);
+        else if (g.NS === "pop")
+            state.popNamespace();
         else
-            state.setNamespace(g.NS);
+            state.pushNamespace(g.NS);
     } else if (g.EXPORT) {
         state.exportLabel(g.EXPORT_NAME, g.EXPORT_ALIAS || g.EXPORT_NAME);
     } else if (g.USE) {
@@ -126,6 +128,15 @@ export const parse = ({source, mountAddress}) => {
         },
         setNamespace: ns => {
             namespace = ns;
+        },
+        popNamespace: () => {
+            namespace = parentNamespace();
+        },
+        pushNamespace: ns => {
+            if (namespace === "")
+                namespace = ns;
+            else
+                namespace += "." + ns;
         },
         exportLabel: (label, alias) => {
             labels[parentNamespace() + "." + alias] = labels[namespace + "." + label];
