@@ -66,6 +66,11 @@ const parseLine = (state, line) => {
 };
 
 
+const normalizeLabel = label =>
+    label.includes(".")
+    ? label
+    : "." + label;
+
 
 const parseArg = (lineno, namespace) => arg => {
     //@ Return a function (labels: Map<string, number>) => number.
@@ -74,8 +79,8 @@ const parseArg = (lineno, namespace) => arg => {
     if (arg.startsWith(":")) // low byte
         return labels => {
             const n =
-                arg[1] === "$"
-                ? labels[arg.slice(2)]
+                arg[1] === "$" && arg[2] === "."
+                ? labels[normalizeLabel(arg.slice(3))]
                 : labels[namespace + "." + arg.slice(1)];
             if (n === undefined){
                 console.log({namespace, labels});
@@ -86,8 +91,8 @@ const parseArg = (lineno, namespace) => arg => {
     else if (arg.endsWith(":")) // high byte
         return labels => {
             const n =
-                arg[0] === "$"
-                ? labels[arg.slice(1,-1)]
+                arg[0] === "$" && arg[1] === "."
+                ? labels[normalizeLabel(arg.slice(2,-1))]
                 : labels[namespace + "." + arg.slice(0, -1)];
             if (n === undefined){
                 console.log({namespace, labels});
