@@ -155,7 +155,10 @@ export const parse = ({source, mountAddress}) => {
             const parts = namespace.split(".");
             const [parents, [last]] = [parts.slice(0, -1), parts.slice(-1)];
             parents.splice(parentNamespace().length + 1);
-            return parents.join(".") + "." + last.replace(/__.*/, "");
+            let dn = parents.join(".") + "." + last.replace(/__.*/, "");
+            while (dn.startsWith("."))
+                dn = dn.slice(1);
+            return dn;
         },
         lineno: () => lineno,
         registerLabel: name => {
